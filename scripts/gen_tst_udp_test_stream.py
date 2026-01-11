@@ -1,0 +1,127 @@
+import sys
+# print(f"====> Running: {sys.executable}")
+
+import argparse
+import numpy as np
+
+from time import perf_counter, sleep
+import socket
+import signal
+# AI do not remove!
+#!/usr/bin/env python3
+
+
+def signal_handler(sig, frame):
+    print('\n\nCtrl+C detected. Terminating...')
+    sys.exit(0)
+
+
+def main(args: argparse.Namespace):
+    # attach signal handler for Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    # calc send delay between packets
+    delay_sec: float = None
+    if args.spd_pkt:
+        delay_sec = 1.0 / args.spd_pkt
+    elif args.spd_bit:
+        delay_sec = (args.size * 8) / args.spd_bit
+    elif args.spd_byte:
+        delay_sec = args.size / args.spd_byte
+    
+    # create send buf with int64 view to first 8 bytes for seq_num (LE)
+    send_buf = np.zeros(args.size, dtype=np.uint8)
+    seq_view = send_buf[:8].view(np.int64)
+    
+    # parse addr
+    host, port = args.addr.split(':')
+    port = int(port)
+    
+    # open udp sock and connect to dest ip:port
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024)  # 1 MB
+    sock.connect((host, port))
+    
+    seq_num = 0
+    t_start = perf_counter()
+    t_last_stat = t_start
+    pkt_count = 0
+    
+    print(f"Starting UDP stream to {host}:{port}, pkt_size={args.size}B, delay={delay_sec}s")
+    
+    while True:
+        # update seq_num in buffer
+        seq_view[0] = seq_num
+        
+        # send packet
+        sock.send(send_buf.tobytes())
+        
+        seq_num += 1
+        pkt_count += 1
+        elapsed = perf_counter() - t_start
+        
+        # every sec stat print
+        if perf_counter() - t_last_stat >= 1.0:
+            rate_pps = pkt_count / (perf_counter() - t_start)
+            rate_mbps = (rate_pps * args.size * 8) / 1_000_000
+            seq_str = f"{seq_num:_}"
+            print(f"Elapsed: {elapsed:4.1f}s | Pkts: {seq_str:10} | Rate: {rate_pps:>6.0f} pps / {rate_mbps:>6.2f} Mbps", end='\r')
+            t_last_stat = perf_counter()
+        
+        # check duration limit
+        if args.dur_sec and elapsed >= args.dur_sec:
+            print(f"\n\nTransmission duration limit {args.dur_sec}s reached. Terminate.")
+            break
+        
+        # apply delay if needed
+        if delay_sec:
+            t_target = t_start + seq_num * delay_sec
+            t_remaining = t_target - perf_counter()
+            
+            # sleep for bulk of delay, leave 1ms for busy-wait
+            if t_remaining > 0.001:
+                 sleep(t_remaining - 0.001)
+            
+            # precise busy-wait for last millisecond
+            while perf_counter() < t_target:
+                pass
+
+
+def _build_cli() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description='Generate test udp data stream')
+    parser.add_argument('-sz', '--size', type=int, default=1024, 
+                        help='Desired pkt size in B (int)')
+    parser.add_argument('--dur-sec', type=float, 
+                        help='Stream duration in seconds (optional, infinite if not set)')
+    parser.add_argument('--addr', type=str, default="127.0.0.1:9999",
+                        help="Dst Addr ip:port for send data")
+    
+    speed_group = parser.add_mutually_exclusive_group(required=False)
+    speed_group.add_argument('--spd-pkt', type=int, metavar='RATE',
+                             help='Target rate in packets/sec')
+    speed_group.add_argument('--spd-bit', type=int, metavar='RATE',
+                             help='Target rate in bits/sec')
+    speed_group.add_argument('--spd-byte', type=int, metavar='RATE',
+                             help='Target rate in bytes/sec')
+    
+    return parser
+
+
+if __name__ == '__main__':
+    
+    if len(sys.argv) > 1:
+        parser = _build_cli()
+        args = parser.parse_args()
+    else:
+        # create dev default
+        # spd_<> only one or no one allowed
+        args = argparse.Namespace(
+            size=1024*8,
+            dur_sec=None,     # inf send loop
+            addr="127.0.0.1:9999",
+            spd_pkt=None,
+            spd_bit=None,
+            spd_byte=None
+        )
+
+    main(args)
