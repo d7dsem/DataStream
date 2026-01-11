@@ -1,5 +1,5 @@
 import sys
-print(f"====> Running: {sys.executable}")
+# print(f"====> Running: {sys.executable}")
 
 import argparse
 import numpy as np
