@@ -2,7 +2,37 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug FR test",
+            "name": "Debug Sock Read test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/wd/test_file_reader.exe",
+            "args": [
+                "--addr", "enp1s0f0np0:192.168.30.3:58176"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/wd",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build SR test",
+            "windows": {
+                "program": "${workspaceFolder}/wd/test_sock_reader.exe"
+            },
+            "linux": {
+                "program": "${workspaceFolder}/wd/test_sock_reader",
+                "MIMode": "gdb"
+            }
+        },
+        {
+            "name": "Debug File Read test",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/wd/test_file_reader.exe",
