@@ -19,13 +19,46 @@
                     "-t",
                     "test_file_reader",
                     "-m",
-                    "debug"
+                    "Debug"
                 ]
             },
             "problemMatcher": [],
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build SR test",
+            "type": "shell",
+            "windows": {
+                "command": "${workspaceFolder}/scripts/deploy.bat",
+                "args": [
+                    "-t",
+                    "test_sock_reader",
+                    "-m",
+                    "debug"
+                ]
+            },
+            "linux": {
+                "command": "${workspaceFolder}/scripts/deploy.sh",
+                "args": [
+                    "-t",
+                    "test_sock_reader",
+                    "-m",
+                    "Debug"
+                ]
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
             },
             "presentation": {
                 "echo": true,
