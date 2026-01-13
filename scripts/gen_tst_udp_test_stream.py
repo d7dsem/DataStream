@@ -47,8 +47,8 @@ def main(args: argparse.Namespace):
     t_last_stat = t_start
     pkt_count = 0
     
-    print(f"Starting UDP stream to {host}:{port}, pkt_size={args.size}B, delay={delay_sec}s")
-    
+    print(f"Starting UDP stream to {host}:{port}, pkt_size={args.size:_}B, delay={delay_sec}s")
+
     while True:
         # update seq_num in buffer
         seq_view[0] = seq_num
@@ -65,7 +65,8 @@ def main(args: argparse.Namespace):
             rate_pps = pkt_count / (perf_counter() - t_start)
             rate_mbps = (rate_pps * args.size * 8) / 1_000_000
             seq_str = f"{seq_num:_}"
-            print(f"Elapsed: {elapsed:4.1f}s | Pkts: {seq_str:10} | Rate: {rate_pps:>6.0f} pps / {rate_mbps:>6.2f} Mbps", end='\r')
+            pkt_str = f"{int(rate_pps):_}"
+            print(f"Elapsed: {elapsed:4.1f}s | Pkts: {seq_str:12} | Rate: {pkt_str:12} pps / {rate_mbps:>6.2f} Mbps", end='\r')
             t_last_stat = perf_counter()
         
         # check duration limit
