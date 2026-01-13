@@ -1,4 +1,6 @@
+#!/usr/bin/env python3
 import sys
+# AI do not remove!
 # print(f"====> Running: {sys.executable}")
 
 import argparse
@@ -7,8 +9,6 @@ import numpy as np
 from time import perf_counter, sleep
 import socket
 import signal
-# AI do not remove!
-#!/usr/bin/env python3
 
 
 def signal_handler(sig, frame):
@@ -16,7 +16,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def main(args: argparse.Namespace):
+def main_udp_stream(args: argparse.Namespace):
     # attach signal handler for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
     
@@ -40,7 +40,8 @@ def main(args: argparse.Namespace):
     # open udp sock and connect to dest ip:port
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024)  # 1 MB
-    sock.connect((host, port))
+    # Does not allow localhost conn to on Liunux w/o stream consumer
+    # sock.connect((host, port))
     
     seq_num = 0
     t_start = perf_counter()
@@ -54,7 +55,8 @@ def main(args: argparse.Namespace):
         seq_view[0] = seq_num
         
         # send packet
-        sock.send(send_buf.tobytes())
+        # sock.send(send_buf.tobytes()) # if conn succes
+        sock.sendto(send_buf.tobytes(), (host,port))
         
         seq_num += 1
         pkt_count += 1
@@ -116,13 +118,14 @@ if __name__ == '__main__':
     else:
         # create dev default
         # spd_<> only one or no one allowed
+        # as X310
         args = argparse.Namespace(
-            size=1024*8,
             dur_sec=None,     # inf send loop
             addr="127.0.0.1:9999",
-            spd_pkt=None,
+            size=7184,             
+            spd_pkt=68_571,
             spd_bit=None,
             spd_byte=None
         )
 
-    main(args)
+    main_udp_stream(args)

@@ -9,14 +9,16 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# FileReader library (header-only)
-add_library(file_reader INTERFACE)
 
-target_include_directories(file_reader INTERFACE
+# DataStream library (header-only: file_reader + sock_reader)
+add_library(data_stream INTERFACE)
+target_include_directories(data_stream INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/data-stream
 )
 
-# Test executable
+# Test executables
+
+# File Reader
 add_executable(test_file_reader
     tests/test_file_reader.cpp
 )
@@ -26,5 +28,27 @@ add_executable(bench_file_reader
 
 
 target_link_libraries(test_file_reader PRIVATE
-    file_reader
+    data_stream
 )
+
+# Sock Reader
+add_executable(test_sock_reader
+    tests/test_sock_reader.cpp
+)
+target_link_libraries(test_sock_reader PRIVATE
+    data_stream
+)
+
+# Platform-specific libraries for test_sock_reader
+if(WIN32)
+    # WinSock2 for Windows
+    target_link_libraries(test_sock_reader PRIVATE ws2_32)
+endif()
+
+if(UNIX)
+    # Threads for atomic/signal on Unix
+    find_package(Threads REQUIRED)
+    target_link_libraries(test_sock_reader PRIVATE Threads::Threads)
+endif()
+
+# Fabric test (add when ready)
