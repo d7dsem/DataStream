@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys
 # print(f"====> Running: {sys.executable}")
 
@@ -5,7 +6,6 @@ import argparse
 import numpy as np
 from pathlib import Path
 
-#!/usr/bin/env python3
 
 
 
@@ -46,12 +46,12 @@ def main(args:argparse.Namespace):
     else:
         print("Error: either --filepath or --dirpath must be specified", file=sys.stderr)
         sys.exit(1)
-        
-    if args.size_mb <= 0:
+    size_mb = 65
+    if args.size_mb is not None and args.size_mb <= 0:
         print("Error: size must be positive", file=sys.stderr)
         sys.exit(1)
     
-    generate_binary_file(filepath, args.size_mb)
+    generate_binary_file(filepath, size_mb)
 
 
 if __name__ == '__main__':
