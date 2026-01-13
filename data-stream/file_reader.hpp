@@ -26,13 +26,13 @@ private:
     size_t fsz;
     size_t chunk_count;
 
-    size_t file_buffer_;
+    size_t file_buffer_sz;
     char* vbuf_ = nullptr;
 
 public:
-    FileReader(const std::string& file_path, size_t chunk_size, size_t offset = 0, size_t file_buffer = _default_buf_sz)
+    FileReader(const std::string& file_path, size_t chunk_size, size_t offset = 0, size_t file_buffer_size = _default_buf_sz)
         : path(file_path), chunk_sz(chunk_size), offs(offset), pf(nullptr),
-          fsz(0), chunk_count(0), file_buffer_(file_buffer)
+          fsz(0), chunk_count(0), file_buffer_sz(file_buffer_size)
     {
         pf = fopen(path.string().c_str(), "rb");
         if (!pf) {
@@ -40,14 +40,14 @@ public:
         }
 
         // Apply stdio buffering (must be before reads)
-        if (file_buffer_ > 8*1024) {
-            vbuf_ = (char*)std::malloc(file_buffer_);
+        if (file_buffer_sz > 8*1024) {
+            vbuf_ = (char*)std::malloc(file_buffer_sz);
             if (!vbuf_) {
                 fclose(pf);
                 pf = nullptr;
                 throw std::runtime_error("[FileReader] Failed to allocate stdio buffer");
             }
-            if (setvbuf(pf, vbuf_, _IOFBF, file_buffer_) != 0) {
+            if (setvbuf(pf, vbuf_, _IOFBF, file_buffer_sz) != 0) {
                 std::free(vbuf_);
                 vbuf_ = nullptr;
                 fclose(pf);
