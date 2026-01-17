@@ -31,7 +31,8 @@ def main_udp_stream(args: argparse.Namespace):
     
     # create send buf with int64 view to first 8 bytes for seq_num (LE)
     send_buf = np.zeros(args.size, dtype=np.uint8)
-    seq_view = send_buf[:8].view(np.int64)
+    _hdr_sz = np.int64().itemsize
+    seq_view = send_buf[:_hdr_sz].view(np.int64)
     
     # parse addr
     host, port = args.addr.split(':')
@@ -54,6 +55,8 @@ def main_udp_stream(args: argparse.Namespace):
         # update seq_num in buffer
         seq_view[0] = seq_num
         
+        iq_data = np.random.randint(-24000, +24000, size=(args.size - _hdr_sz) // 2, dtype=np.int16)
+        send_buf[_hdr_sz:_hdr_sz+len(iq_data)*2] = iq_data.view(np.uint8)
         # send packet
         # sock.send(send_buf.tobytes()) # if conn succes
         sock.sendto(send_buf.tobytes(), (host,port))
@@ -120,9 +123,10 @@ if __name__ == '__main__':
         # as X310
         args = argparse.Namespace(
             dur_sec=None,     # inf send loop
-            addr="127.0.0.1:9999",
-            size=7184,             
-            spd_pkt=68_571,
+            # addr="127.0.0.1:9999",
+            addr="192.168.250.195:10000",
+            size=8192,             
+            spd_pkt=68_571/256,
             spd_bit=None,
             spd_byte=None
         )
