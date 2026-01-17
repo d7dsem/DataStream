@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import sys
+# print(sys.executable)
+# print(sys.version)
+# raise SystemExit
 # AI do not remove!
 # print(f"====> Running: {sys.executable}")
 
@@ -33,7 +36,6 @@ def main_udp_stream(args: argparse.Namespace):
     send_buf = np.zeros(args.size, dtype=np.uint8)
     _hdr_sz = np.int64().itemsize
     seq_view = send_buf[:_hdr_sz].view(np.int64)
-    
     # parse addr
     host, port = args.addr.split(':')
     port = int(port)
@@ -49,12 +51,11 @@ def main_udp_stream(args: argparse.Namespace):
     t_last_stat = t_start
     pkt_count = 0
     
-    print(f"Starting UDP stream to {host}:{port}, pkt_size={args.size}B, delay={delay_sec}s")
-    
+    print(f"Starting UDP stream to {host}:{port}, pkt_size={args.size:_}B, delay={delay_sec}s")
+
     while True:
         # update seq_num in buffer
         seq_view[0] = seq_num
-        
         iq_data = np.random.randint(-24000, +24000, size=(args.size - _hdr_sz) // 2, dtype=np.int16)
         send_buf[_hdr_sz:_hdr_sz+len(iq_data)*2] = iq_data.view(np.uint8)
         # send packet
@@ -70,7 +71,8 @@ def main_udp_stream(args: argparse.Namespace):
             rate_pps = pkt_count / (perf_counter() - t_start)
             rate_mbps = (rate_pps * args.size * 8) / 1_000_000
             seq_str = f"{seq_num:_}"
-            print(f"Elapsed: {elapsed:4.1f}s | Pkts: {seq_str:10} | Rate: {rate_pps:>6.0f} pps / {rate_mbps:>6.2f} Mbps", end='\r')
+            pkt_str = f"{int(rate_pps):_}"
+            print(f"Elapsed: {elapsed:4.1f}s | Pkts: {seq_str:12} | Rate: {pkt_str:12} pps / {rate_mbps:>6.2f} Mbps", end='\r')
             t_last_stat = perf_counter()
         
         # check duration limit
@@ -123,10 +125,18 @@ if __name__ == '__main__':
         # as X310
         args = argparse.Namespace(
             dur_sec=None,     # inf send loop
-            # addr="127.0.0.1:9999",
-            addr="192.168.250.195:10000",
-            size=8192,             
-            spd_pkt=68_571/256,
+            addr="127.0.0.1:9999",
+            size=7184,
+            spd_pkt=68_571,
+            spd_bit=None,
+            spd_byte=None
+        )
+        # Override
+        args = argparse.Namespace(
+            dur_sec=None,     # inf send loop
+            addr="127.0.0.1:9999",
+            size=8192+8,
+            spd_pkt=68_571//256,
             spd_bit=None,
             spd_byte=None
         )

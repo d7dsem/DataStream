@@ -22,6 +22,11 @@ target_include_directories(data_stream INTERFACE
 add_executable(test_file_reader
     tests/test_file_reader.cpp
 )
+add_executable(bench_file_reader
+    tests/bench_fread.cpp
+)
+
+
 target_link_libraries(test_file_reader PRIVATE
     data_stream
 )
